@@ -1,0 +1,134 @@
+{
+  "questions": [
+    {
+      "question": "Türkiye'nin başkenti neresidir?",
+      "options": ["İstanbul", "Ankara", "İzmir", "Bursa"],
+      "answer": "Ankara",
+      "category": "Coğrafya",
+      "difficulty": "easy",
+      "points": 10
+    },
+    {
+      "question": "Dünyanın en yüksek dağı hangisidir?",
+      "options": ["Everest", "K2", "Elbrus", "Makalu"],
+      "answer": "Everest",
+      "category": "Coğrafya",
+      "difficulty": "medium",
+      "points": 20
+    }
+  ]import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class Question {
+  final String question;
+  final List<String> options;
+  final String answer;
+  final String category;
+  final String difficulty;
+  final int points;
+
+  Question({
+    required this.question,
+    required this.options,
+    required this.answer,
+    required this.category,
+    required this.difficulty,
+    required this.points,
+  });
+
+  factory Question.fromJson(Map<String, dynamic> json) {
+    return Question(
+      question: json['question'],
+      options: List<String>.from(json['options']),
+      answer: json['answer'],
+      category: json['category'],
+      difficulty: json['difficulty'],
+      points: json['points'],
+    );
+  }
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Bilgi Yarışması',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: QuizPage(),
+    );
+  }
+}
+
+class QuizPage extends StatefulWidget {
+  @override
+  _QuizPageState createState() => _QuizPageState();
+}
+
+class _QuizPageState extends State<QuizPage> {
+  late Future<List<Question>> questions;
+
+  @override
+  void initState() {
+    super.initState();
+    questions = loadQuestions();
+  }
+
+  Future<List<Question>> loadQuestions() async {
+    final String response = await rootBundle.loadString('assets/questions.json');
+    final data = json.decode(response);
+    List<Question> questionList = [];
+    for (var item in data['questions']) {
+      questionList.add(Question.fromJson(item));
+    }
+    return questionList;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Bilgi Yarışması')),
+      body: FutureBuilder<List<Question>>(
+        future: questions,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Bir hata oluştu'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('Sorular bulunamadı'));
+          } else {
+            final question = snapshot.data![0]; // İlk soruyu gösterelim
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(question.question, style: TextStyle(fontSize: 20)),
+                  SizedBox(height: 20),
+                  ...question.options.map((option) => ElevatedButton(
+                    onPressed: () {
+                      // Cevap kontrolü yapılabilir
+                    },
+                    child: Text(option),
+                  )),
+                ],
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+}
+}dependencies:
+  flutter:
+    sdk: flutter
+  http: ^0.13.3
+  provider: ^6.0.0
